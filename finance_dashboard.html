@@ -1,0 +1,286 @@
+
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>حساب المال - مدخرات وتقسيم المصروف</title>
+<style>
+  :root{font-family:system-ui,Segoe UI,Roboto,"Noto Sans Arabic",Arial;--bg:#f7f8fb;--card:#fff;--accent:#0366d6}
+  body{margin:0;background:var(--bg);color:#111;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px}
+  .container{max-width:980px;width:100%}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  h1{margin:0;font-size:20px}
+  .card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 22px rgba(12,20,40,0.06);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 300px;gap:12px}
+  label{display:block;font-size:13px;margin-bottom:6px;color:#444}
+  input[type="number"], input[type="text"], select{width:100%;padding:10px;border-radius:8px;border:1px solid #e3e7ef;font-size:14px;box-sizing:border-box}
+  .row{display:flex;gap:8px}
+  .small{font-size:13px;color:#666}
+  .list{margin-top:8px}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;border:1px dashed #e6e9f2;margin-bottom:8px}
+  .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(3,102,214,0.12)}
+  .results{display:flex;flex-direction:column;gap:8px}
+  .big{font-weight:700;font-size:20px}
+  .muted{color:#667085;font-size:13px}
+  .flex-between{display:flex;justify-content:space-between;align-items:center}
+  .danger{color:#c0392b}
+  footer{font-size:13px;color:#5b6b82;margin-top:12px;text-align:center}
+  @media(max-width:880px){.grid{grid-template-columns:1fr;}.container{padding:8px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>حاسبة الراتب والالتزامات — خلك منظم</h1>
+      <div class="small">دخل راتبك وشوف كم يبقى، وخصص 10–15٪ للادخار، وحسب الأقساط.</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <label>الراتب الشهري</label>
+        <input id="salary" type="number" min="0" step="0.01" placeholder="أدخل راتبك الشهري" />
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <div style="flex:1">
+            <label>نسبة الادخار المقترحة</label>
+            <select id="savePercent">
+              <option value="10">10٪</option>
+              <option value="12">12٪</option>
+              <option value="15" selected>15٪</option>
+            </select>
+          </div>
+          <div style="width:130px">
+            <label>العملة</label>
+            <input id="currency" type="text" value="SAR" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex-between"><strong>المصروفات الشهرية (التزامات ثابتة)</strong><button id="addExpenseBtn" class="btn ghost">أضف التزام</button></div>
+        <div id="expensesList" class="list"></div>
+        <div style="margin-top:8px">
+          <input id="expName" type="text" placeholder="اسم الالتزام (مثلاً: ايجار، كهرباء)" />
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <input id="expAmount" type="number" min="0" step="0.01" placeholder="المبلغ الشهري" />
+            <button id="saveExp" class="btn">حفظ الالتزام</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex-between"><strong>القروض</strong><span class="small">تقدر تدخل قروض بدفع شهري أو احسب دفعة من المبلغ، الفائدة، وعدد السنوات</span></div>
+        <div id="loansList" class="list"></div>
+
+        <div style="margin-top:6px" class="row">
+          <input id="loanName" type="text" placeholder="اسم القرض (شخصي/عقاري)" />
+          <input id="loanMonthly" type="number" min="0" step="0.01" placeholder="دفعة شهرية (اختياري)" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input id="loanPrincipal" type="number" min="0" step="0.01" placeholder="المبلغ الكلي (اختياري)" />
+          <input id="loanRate" type="number" min="0" step="0.01" placeholder="نسبة الفائدة سنوياً (مثلاً 4.5)" />
+          <input id="loanYears" type="number" min="0" step="1" placeholder="مدة بالسنوات (اختياري)" />
+        </div>
+        <div style="margin-top:8px"><button id="addLoanBtn" class="btn">أضف القرض</button></div>
+      </div>
+
+      <div class="card">
+        <strong>خيارات سريعة</strong>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="clearBtn" class="btn ghost">نمط افتراضي جديد</button>
+          <button id="saveBtn" class="btn">حفظ في المتصفح</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card results">
+        <div class="flex-between">
+          <div>
+            <div class="muted">الراتب</div>
+            <div id="displaySalary" class="big">—</div>
+          </div>
+          <div>
+            <div class="muted">الادخار المُقترح</div>
+            <div id="displaySave" class="big">—</div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="muted">مجموع الالتزامات الشهرية</div>
+          <div id="displayExpenses" class="big">—</div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="muted">مجموع أقساط القروض</div>
+          <div id="displayLoans" class="big">—</div>
+        </div>
+
+        <div style="margin-top:12px;padding:12px;border-radius:10px;background:#f3f6ff">
+          <div class="muted">المتبقي بعد الالتزامات والادخار</div>
+          <div id="displayRemaining" class="big">—</div>
+          <div id="advice" class="small muted" style="margin-top:6px"></div>
+        </div>
+
+        <div style="margin-top:10px">
+          <strong>تقسيم المبلغ المتبقي (اقتراح)</strong>
+          <div style="margin-top:8px" id="allocation"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong>تفاصيل وسجل</strong>
+        <div class="small muted" style="margin-top:8px">التغييرات تحفظ محلياً في متصفحك. تقدر تستخدم زر الحفظ لتحميل نسخة أو تصدير.</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button id="exportBtn" class="btn">تصدير JSON</button>
+          <button id="importBtn" class="btn ghost">استيراد JSON</button>
+          <input id="fileInput" type="file" accept="application/json" style="display:none" />
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="small muted card">صممت لك صفحة بسيطة تساعدك تخطط. تقدر تحفظ، تعدل وتضيف أي التزام.</footer>
+</div>
+
+<script>
+// Helper utils
+const $ = id => document.getElementById(id);
+const currency = () => $('currency').value || 'SAR';
+function fmt(n){ if(isNaN(n)) return '-'; return new Intl.NumberFormat('ar-SA',{maximumFractionDigits:2}).format(n) + ' ' + currency(); }
+
+// State & persistence
+let state = { salary:0, savePercent:15, expenses:[], loans:[] };
+
+function loadState(){ try{ const s = localStorage.getItem('finance_state'); if(s){ state = JSON.parse(s); } }catch(e){} applyStateToUI(); calcAll(); }
+function saveState(){ localStorage.setItem('finance_state', JSON.stringify(state)); alert('تم الحفظ محلياً'); }
+
+function applyStateToUI(){
+  $('salary').value = state.salary || '';
+  $('savePercent').value = state.savePercent || 15;
+  $('currency').value = state.currency || 'SAR';
+  renderExpenses(); renderLoans();
+}
+
+function renderExpenses(){
+  const el = $('expensesList'); el.innerHTML='';
+  state.expenses.forEach((ex, i) => {
+    const div = document.createElement('div'); div.className='item';
+    div.innerHTML = `<div><strong>${ex.name}</strong><div class="muted">${fmt(ex.amount)}</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><button data-i="${i}" class="btn ghost delExp">حذف</button></div>`;
+    el.appendChild(div);
+  });
+  document.querySelectorAll('.delExp').forEach(b=>b.addEventListener('click', e=>{ const i=+e.target.dataset.i; state.expenses.splice(i,1); renderExpenses(); calcAll(); }));
+}
+
+function renderLoans(){
+  const el = $('loansList'); el.innerHTML='';
+  state.loans.forEach((ln,i)=>{
+    const div = document.createElement('div'); div.className='item';
+    const details = ln.monthlyPayment ? `دفعة شهرية: ${fmt(ln.monthlyPayment)}` : `المبلغ: ${fmt(ln.principal)} - ${ln.rate||0}% - ${ln.years||0} سنة`;
+    div.innerHTML = `<div><strong>${ln.name}</strong><div class="muted">${details}</div></div>
+      <div><button data-i="${i}" class="btn ghost delLoan">حذف</button></div>`;
+    el.appendChild(div);
+  });
+  document.querySelectorAll('.delLoan').forEach(b=>b.addEventListener('click', e=>{ const i=+e.target.dataset.i; state.loans.splice(i,1); renderLoans(); calcAll(); }));
+}
+
+// Event wiring
+$('saveExp').addEventListener('click', ()=>{
+  const name = $('expName').value.trim() || 'التزام';
+  const amount = parseFloat($('expAmount').value) || 0;
+  state.expenses.push({name, amount});
+  $('expName').value=''; $('expAmount').value='';
+  renderExpenses(); calcAll();
+});
+$('addLoanBtn').addEventListener('click', ()=>{
+  const name = $('loanName').value.trim() || 'قرض';
+  const monthly = parseFloat($('loanMonthly').value);
+  const principal = parseFloat($('loanPrincipal').value);
+  const rate = parseFloat($('loanRate').value);
+  const years = parseFloat($('loanYears').value);
+  let monthlyPayment = (isFinite(monthly) && monthly>0) ? monthly : null;
+  if(!monthlyPayment && principal && rate>=0 && years){
+    // amortization formula
+    const r = (rate/100)/12;
+    const n = years*12;
+    if(r===0) monthlyPayment = principal / n;
+    else monthlyPayment = (principal * r) / (1 - Math.pow(1+r, -n));
+  }
+  if(!monthlyPayment) monthlyPayment = 0;
+  state.loans.push({name, monthlyPayment, principal: principal||0, rate: rate||0, years: years||0});
+  $('loanName').value=''; $('loanMonthly').value=''; $('loanPrincipal').value=''; $('loanRate').value=''; $('loanYears').value='';
+  renderLoans(); calcAll();
+});
+
+$('salary').addEventListener('input', e=>{ state.salary = parseFloat(e.target.value) || 0; calcAll(); });
+$('savePercent').addEventListener('change', e=>{ state.savePercent = parseFloat(e.target.value) || 0; calcAll(); });
+$('currency').addEventListener('change', ()=>{ calcAll(); });
+
+$('addExpenseBtn').addEventListener('click', ()=>{ $('expName').focus(); });
+$('clearBtn').addEventListener('click', ()=>{ if(confirm('تمسح كل البيانات المحفوظة محلياً؟')){ state = {salary:0, savePercent:15, expenses:[], loans:[] }; localStorage.removeItem('finance_state'); applyStateToUI(); calcAll(); }});
+$('saveBtn').addEventListener('click', saveState);
+$('exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download = 'finance_export.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+$('importBtn').addEventListener('click', ()=>{$('fileInput').click();});
+$('fileInput').addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader(); reader.onload = evt => { try{ state = JSON.parse(evt.target.result); applyStateToUI(); renderExpenses(); renderLoans(); calcAll(); alert('تم الاستيراد'); }catch(err){ alert('فشل الاستيراد'); } };
+  reader.readAsText(f);
+});
+
+function calcAll(){
+  const salary = parseFloat(state.salary) || 0;
+  const savePct = parseFloat(state.savePercent) || 0;
+  const saveAmount = salary * (savePct/100);
+  const totalExpenses = state.expenses.reduce((s,e)=>s + (parseFloat(e.amount)||0), 0);
+  const totalLoans = state.loans.reduce((s,l)=>s + (parseFloat(l.monthlyPayment)||0), 0);
+  const remaining = salary - saveAmount - totalExpenses - totalLoans;
+
+  // Update display
+  $('displaySalary').textContent = fmt(salary);
+  $('displaySave').textContent = fmt(saveAmount);
+  $('displayExpenses').textContent = fmt(totalExpenses);
+  $('displayLoans').textContent = fmt(totalLoans);
+  $('displayRemaining').textContent = fmt(remaining);
+
+  // Advice
+  const advice = $('advice');
+  if(salary<=0) advice.textContent = 'أدخل راتبك لاظهار النتائج.';
+  else if(remaining < 0) advice.textContent = 'تنبيه: المصاريف + الادخار + الأقساط تتجاوز راتبك—راجع التزاماتك أو قلل النسبة المدخرة.';
+  else advice.textContent = 'الوضع طبيعي. تقدر تزيد الإدخار أو تراكب الميزانية حسب أولوياتك.';
+
+  // Allocation suggestion of remaining
+  const alloc = $('allocation'); alloc.innerHTML='';
+  if(remaining>0){
+    const wants = [
+      {k:'صندوق للطوارئ', pct:40},
+      {k:'مصاريف مرنة (أكل، مواصلات)', pct:30},
+      {k:'استثمار / تحسين الدخل', pct:20},
+      {k:'ترفيه/تسلية', pct:10},
+    ];
+    wants.forEach(w=>{
+      const el = document.createElement('div');
+      el.innerHTML = `<div style="display:flex;justify-content:space-between"><div class="muted">${w.k} (${w.pct}%)</div><div class="big">${fmt(remaining * (w.pct/100))}</div></div>`;
+      alloc.appendChild(el);
+    });
+  } else {
+    alloc.innerHTML = '<div class="muted">لا يوجد مبلغ متبقي ليتم تقسيمه.</div>';
+  }
+}
+
+// initial load
+loadState();
+</script>
+
+</body>
+</html>
